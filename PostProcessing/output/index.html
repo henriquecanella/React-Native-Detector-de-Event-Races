@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.19.0/cytoscape.min.js" integrity="sha512-TOWs340KHbJjY/a2SCtsUcXYBg7/xPX72NKpJ3VITogkHJTy2yMyoJE0pxJjumMGHCg46ud89KO5q1Toe3Aeaw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title></title>
+  </head>
+  <body>
+
+    <div class="container">
+      <div id="cy"></div>
+      <h1 id="susceptibleToEvents"></h1>
+      <h1 id="trace"></h1>
+      <p id="trace-value"></p>
+    </div>
+
+    <script src="../logs/resolvedPromises.js"></script>
+    <script>
+      
+      //console.log(promisesArray);
+      let susceptibleToEvents = 0;
+
+      console.log(promisesArray);
+
+      const formattedArray = promisesArray.map((node, index) => {
+        if (node.Status == 'Created') {
+          if (promisesArray[index+1].PromiseID == node.PromiseID && index == 0) {
+            return {
+              data: {
+                id: `${node.PromiseID}C`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#FF0000',
+                'label': 'data(id)'
+              },
+              position: {
+                x: 200,
+                y: 300,
+              }
+            }
+          }
+          else if (promisesArray[index+1].PromiseID == node.PromiseID && (index >= 1 && promisesArray[index-1].Status != 'Created')){
+            return {
+              data: {
+                id: `${node.PromiseID}C`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#FF0000',
+                'label': 'data(id)'
+              },
+              position: {
+                x: 200,
+                y: 300,
+              }
+            }
+          }
+          else {
+            susceptibleToEvents++;
+            return {
+              data: {
+                id: `${node.PromiseID}C`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#0000FF',
+                'label': 'data(id)'
+              },
+              position: {
+                x: 200,
+                y: 300,
+              }
+            }
+          }          
+        }
+        else {
+          if (promisesArray[index-1].PromiseID == node.PromiseID && index == promisesArray.length-1) {
+            return {
+              data: {
+                id: `${node.PromiseID}R`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#6be38b',
+                'label': 'data(id)'
+              }
+            }
+          }
+          else if (promisesArray[index-1].PromiseID == node.PromiseID && (index < promisesArray.length-1 && promisesArray[index+1].Status == 'Created')) {
+            return {
+              data: {
+                id: `${node.PromiseID}R`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#6be38b',
+                'label': 'data(id)'
+              }
+            }
+          }
+          else {
+            return {
+              data: {
+                id: `${node.PromiseID}R`,
+                trace: `${node.Trace}`,
+              },
+              value: node.PromiseID,
+              style: {
+                'background-color': '#fcba03',
+                'label': 'data(id)'
+              }
+            }
+          }
+        }
+      });
+
+      const edges = [];
+
+      for (const i in promisesArray) {
+        if (promisesArray[i].Status == 'Created') {
+          for (const j in promisesArray) {
+            if ((promisesArray[j].Status == 'Resolved' || promisesArray[j].Status == 'Rejected') && promisesArray[j].PromiseID == promisesArray[i].PromiseID) {
+              //console.log(promisesArray[j]);
+              edges.push({data: {id: promisesArray[j].PromiseID, source: `${promisesArray[i].PromiseID}C`, target: `${promisesArray[j].PromiseID}R`}})
+            }
+          }
+        }
+      }
+
+      //console.log(edges);
+      
+      const fullArray = formattedArray.concat(edges);
+
+      
+      console.log(fullArray);
+
+
+      var cy = cytoscape({
+
+      container: document.getElementById('cy'), // container to render in
+
+      elements: fullArray,
+
+      style: [ // the stylesheet for the graph
+        {
+          selector: 'node',
+          style: {
+            'background-color': '#666',
+            'label': 'data(id)'
+          }
+        },
+
+        {
+          selector: 'edge',
+          style: {
+            'width': 3,
+            'line-color': '#ccc',
+            'target-arrow-color': '#ccc',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier',
+          }
+        }
+      ],
+
+      layout: {
+        name: 'grid',
+        rows: 1
+      }
+
+      });
+
+      count = 0;
+
+      const elements = cy._private.elements;
+      
+      for (const i in promisesArray) {
+        const elementCreated = elements[i]._private.data;
+        //console.log(elementCreated.id)
+        if (promisesArray[i].Status == 'Created') {
+          count++;
+          cy.$id(elementCreated.id).position('y', (Number(count))*100);
+          for (const j in promisesArray) {
+            if ((promisesArray[j].Status == 'Resolved' || promisesArray[j].Status == 'Rejected') && promisesArray[j].PromiseID == promisesArray[i].PromiseID) {
+              const elementResolved = elements[j]._private.data;
+              cy.$id(elementResolved.id).position('y', (Number(count))*100);
+            }
+          }
+        }
+      }
+
+      var text = document.getElementById('susceptibleToEvents');
+        text.innerHTML = "Promises Susceptible to Event Races: " + susceptibleToEvents;
+
+      cy.on('click', 'node', function(evt){
+        var text = document.getElementById('trace-value');
+        text.innerHTML = this.data('trace');
+
+        var text = document.getElementById('trace');
+        text.innerHTML = "Stack Trace from ID: " + this.id();
+
+        
+      });
+
+    </script>
+  </body>
+</html>
