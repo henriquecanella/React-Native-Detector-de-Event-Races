@@ -28,3 +28,9 @@ Para iniciar a utilização da ferramenta os seguintes passos são necessários:
 * Adicionar o arquivo de log salvo na pasta `/PostProcessing/input/` com o nome `log.txt`
 * Executar a partir de um terminal bash o comando `./index.sh`
 * Feito isso uma nova aba no navegador ira se abrir com os resultados.
+
+#
+
+## Aplicações utilizadas para testar a ferramenta:
+
+https://drive.google.com/drive/folders/1VBpw6MDZNKS6IaxV_O6kd8T7iv-8-LYU?usp=sharing
